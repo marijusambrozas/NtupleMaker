@@ -32,7 +32,7 @@ options.register('useSinglePhotonTrigger',
                   "Include single photon triggers if true")
 
 options.register('nEvent',
-                  -1, # default value
+                  1000,#-1, # default value
                   VarParsing.multiplicity.singleton, # singleton or list
                   VarParsing.varType.int,         # string, int, or float
                   "number of events to run")

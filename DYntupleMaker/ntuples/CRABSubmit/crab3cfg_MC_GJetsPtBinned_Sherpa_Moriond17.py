@@ -25,12 +25,12 @@ config.Data.inputDBS = 'global'
 config.Data.splitting = 'FileBased'
 #config.Data.unitsPerJob = 2
 config.Data.unitsPerJob = 1
-config.Data.outLFNDirBase = '/store/user/kplee/%s' % (args.version)
+config.Data.outLFNDirBase = '/store/user/mambroza/%s' % (args.version)
 config.Data.publication = False
 # config.JobType.maxJobRuntimeMin = 2700 # -- 36 hours -- #
 
-#config.Site.storageSite = 'T3_KR_KISTI'
-config.Site.storageSite = 'T2_KR_KNU'
+config.Site.storageSite = 'T3_KR_KISTI'
+#config.Site.storageSite = 'T2_KR_KNU'
 
 
 ### -- 'MultiCRAB' part -- ###

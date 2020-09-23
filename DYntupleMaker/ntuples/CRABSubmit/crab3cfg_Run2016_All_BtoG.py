@@ -24,11 +24,11 @@ config.Data.inputDataset = ''
 config.Data.inputDBS = 'global'
 config.Data.splitting = 'LumiBased'
 config.Data.unitsPerJob = 40
-config.Data.outLFNDirBase = '/store/user/kplee/%s' % (args.version)
+config.Data.outLFNDirBase = '/store/user/mambroza/%s' % (args.version)
 config.Data.publication = False
 
-#config.Site.storageSite = 'T3_KR_KISTI'
-config.Site.storageSite = 'T2_KR_KNU'
+config.Site.storageSite = 'T3_KR_KISTI'
+#config.Site.storageSite = 'T2_KR_KNU'
 
 
 ### -- 'MultiCRAB' part -- ###
