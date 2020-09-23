@@ -409,11 +409,11 @@ void DYntupleMaker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSe
 		Electron_Px[i] = Electron_Py[i] = Electron_Pz[i] = -9999;
 		Electron_charge[i] = -100;
 
-    // -- more charge information
-    Electron_scPixCharge[i] = -100;
-    Electron_isGsfCtfScPixConsistent[i] = false;
-    Electron_isGsfScPixConsistent[i] = false;
-    Electron_isGsfCtfConsistent[i] = false;
+                // -- more charge information
+                Electron_scPixCharge[i] = -100;
+                Electron_isGsfCtfScPixConsistent[i] = false;
+                Electron_isGsfScPixConsistent[i] = false;
+                Electron_isGsfCtfConsistent[i] = false;
 
 		Electron_gsfpT[i] = Electron_gsfEta[i] = Electron_gsfPhi[i] = -100;
 		Electron_gsfPx[i] = Electron_gsfPy[i] = Electron_gsfPz[i] = -9999;
@@ -455,6 +455,10 @@ void DYntupleMaker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSe
 		Electron_relIsoRho03[i] = -9999;
 		Electron_hasConversion[i] = false;
 		Electron_mHits[i] = -9999;
+
+                Electron_trkIso03[i] = -9999;
+                Electron_ecalIso03[i] = -9999;
+                Electron_hcalIso03[i] = -9999;
 
 		Electron_crack[i] = -1;
 		Electron_ecalDriven[i] = -1;
@@ -931,10 +935,10 @@ void DYntupleMaker::beginJob()
 		DYTree->Branch("Electron_eta", &Electron_eta, "Electron_eta[Nelectrons]/D");
 		DYTree->Branch("Electron_phi", &Electron_phi, "Electron_phi[Nelectrons]/D");
 		DYTree->Branch("Electron_charge", &Electron_charge, "Electron_charge[Nelectrons]/I");
-    DYTree->Branch("Electron_scPixCharge",             &Electron_scPixCharge,             "Electron_scPixCharge[Nelectrons]/I");
-    DYTree->Branch("Electron_isGsfCtfScPixConsistent", &Electron_isGsfCtfScPixConsistent, "Electron_isGsfCtfScPixConsistent[Nelectrons]/O");
-    DYTree->Branch("Electron_isGsfScPixConsistent",    &Electron_isGsfScPixConsistent,    "Electron_isGsfScPixConsistent[Nelectrons]/O");
-    DYTree->Branch("Electron_isGsfCtfConsistent",      &Electron_isGsfCtfConsistent,      "Electron_isGsfCtfConsistent[Nelectrons]/O");
+                DYTree->Branch("Electron_scPixCharge",             &Electron_scPixCharge,             "Electron_scPixCharge[Nelectrons]/I");
+                DYTree->Branch("Electron_isGsfCtfScPixConsistent", &Electron_isGsfCtfScPixConsistent, "Electron_isGsfCtfScPixConsistent[Nelectrons]/O");
+                DYTree->Branch("Electron_isGsfScPixConsistent",    &Electron_isGsfScPixConsistent,    "Electron_isGsfScPixConsistent[Nelectrons]/O");
+                DYTree->Branch("Electron_isGsfCtfConsistent",      &Electron_isGsfCtfConsistent,      "Electron_isGsfCtfConsistent[Nelectrons]/O");
 		DYTree->Branch("Electron_gsfpT", &Electron_gsfpT, "Electron_gsfpT[Nelectrons]/D");
 		DYTree->Branch("Electron_gsfPx", &Electron_gsfPx, "Electron_gsfPx[Nelectrons]/D");
 		DYTree->Branch("Electron_gsfPy", &Electron_gsfPy, "Electron_gsfPy[Nelectrons]/D");
@@ -979,6 +983,10 @@ void DYntupleMaker::beginJob()
 		// DYTree->Branch("Electron_relIsoRho03", &Electron_relIsoRho03, "Electron_relIsoRho03[Nelectrons]/D");
 		DYTree->Branch("Electron_hasConversion", &Electron_hasConversion, "Electron_hasConversion[Nelectrons]/O");
 		DYTree->Branch("Electron_mHits", &Electron_mHits, "Electron_mHits[Nelectrons]/I");
+
+                DYTree->Branch("Electron_trkIso03", &Electron_trkIso03, "Electron_trkIso03[Nelectrons]/D");
+                DYTree->Branch("Electron_ecalIso03", &Electron_ecalIso03, "Electron_ecalIso03[Nelectrons]/D");
+                DYTree->Branch("Electron_hcalIso03", &Electron_hcalIso03, "Electron_hcalIso03[Nelectrons]/D");
 
 		DYTree->Branch("Electron_EnergySC", &Electron_EnergySC, "Electron_EnergySC[Nelectrons]/D");
 		DYTree->Branch("Electron_preEnergySC", &Electron_preEnergySC, "Electron_preEnergySC[Nelectrons]/D");
@@ -2407,10 +2415,10 @@ void DYntupleMaker::fillElectrons(const edm::Event &iEvent, const edm::EventSetu
 		Electron_Energy[_nElectron] = el->energy();
 		Electron_charge[_nElectron] = el->charge();
 
-    Electron_scPixCharge[_nElectron]             = el->chargeInfo().scPixCharge;
-    Electron_isGsfCtfScPixConsistent[_nElectron] = el->chargeInfo().isGsfCtfScPixConsistent;
-    Electron_isGsfScPixConsistent[_nElectron]    = el->chargeInfo().isGsfScPixConsistent;
-    Electron_isGsfCtfConsistent[_nElectron]      = el->chargeInfo().isGsfCtfConsistent;
+                Electron_scPixCharge[_nElectron]             = el->chargeInfo().scPixCharge;
+                Electron_isGsfCtfScPixConsistent[_nElectron] = el->chargeInfo().isGsfCtfScPixConsistent;
+                Electron_isGsfScPixConsistent[_nElectron]    = el->chargeInfo().isGsfScPixConsistent;
+                Electron_isGsfCtfConsistent[_nElectron]      = el->chargeInfo().isGsfCtfConsistent;
 
 		Electron_fbrem[_nElectron] = el->fbrem();
 		Electron_eOverP[_nElectron] = el->eSuperClusterOverP();
@@ -2465,6 +2473,10 @@ void DYntupleMaker::fillElectrons(const edm::Event &iEvent, const edm::EventSetu
 		Electron_phIso03[_nElectron] = pfPhoton;
 		Electron_ChIso03FromPU[_nElectron] = pfChargedFromPU;
 		Electron_RelPFIso_dBeta[_nElectron] = (pfCharged + max<float>( 0.0, pfNeutral + pfPhoton - 0.5 * pfChargedFromPU))/(el->pt());
+                
+                Electron_trkIso03[_nElectron] = el->dr03TkSumPt();
+                Electron_ecalIso03[_nElectron] = el->dr03EcalRecHitSumEt();
+                Electron_hcalIso03[_nElectron] = el->dr03HcalTowerSumEt();
 		
 		// -- https://github.com/ikrav/cmssw/blob/egm_id_80X_v1/RecoEgamma/ElectronIdentification/data/Summer16/effAreaElectrons_cone03_pfNeuHadronsAndPhotons_80X.txt -- //
 		edm::FileInPath eaConstantsFile("RecoEgamma/ElectronIdentification/data/Summer16/effAreaElectrons_cone03_pfNeuHadronsAndPhotons_80X.txt");

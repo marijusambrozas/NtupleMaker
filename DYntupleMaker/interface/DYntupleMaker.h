@@ -431,6 +431,10 @@ private:
 	bool Electron_hasConversion[MPSIZE];
 	int Electron_mHits[MPSIZE];
 
+        double Electron_trkIso03[MPSIZE];
+        double Electron_ecalIso03[MPSIZE];
+        double Electron_hcalIso03[MPSIZE];
+
 	int Electron_crack[MPSIZE];
 	int Electron_ecalDriven[MPSIZE];
 	double Electron_isoEMHADDepth1[MPSIZE];
