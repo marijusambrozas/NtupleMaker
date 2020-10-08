@@ -6,6 +6,7 @@
 ////////////////////////////////
 #include <memory>
 #include <iostream>
+#include <vector>
 
 //////////////////////
 // -- FrameWorks -- //
@@ -69,6 +70,9 @@
 // -- Triggers -- //
 ////////////////////
 #include "HLTrigger/HLTcore/interface/HLTConfigProvider.h"
+#include "HLTrigger/HLTcore/interface/HLTPrescaleProvider.h"
+#include "L1Trigger/L1TGlobal/interface/L1TGlobalUtil.h"
+#include "DataFormats/L1TGlobal/interface/GlobalAlgBlk.h"
 
 ////////////////
 // -- Else -- //
@@ -104,11 +108,11 @@ public:
 	~DYntupleMaker();
 
 private:
-	virtual void beginJob() ;
+	virtual void beginJob();
+	virtual void endJob();
+	virtual void beginRun(const edm::Run &, const edm::EventSetup&);
+	virtual void endRun(const edm::Run &, const edm::EventSetup&);
 	virtual void analyze(const edm::Event&, const edm::EventSetup&);
-	virtual void endJob() ;
-	virtual void beginRun(const edm::Run &, const edm::EventSetup & );
-	virtual void endRun(const edm::Run &, const edm::EventSetup & );
 
 	virtual void fillPrimaryVertex(const edm::Event &iEvent);  // fill primary vertex information
 	virtual void fillMET(const edm::Event &iEvent);            // fill MET information
@@ -116,7 +120,8 @@ private:
 	virtual void fillMuons(const edm::Event &iEvent, const edm::EventSetup& iSetup);
 	virtual void fillElectrons(const edm::Event &iEvent, const edm::EventSetup& iSetup);
 	virtual void fillJet(const edm::Event &iEvent);            // fill jet and b-tagging information
-	virtual void hltReport(const edm::Event &iEvent);          // fill list of triggers fired in an event
+	virtual void hltReport(const edm::Event &iEvent, const edm::EventSetup &iSetup);          // fill list of triggers fired in an event
+	virtual void fill_L1(const edm::Event &iEvent, const edm::EventSetup &iSetup);
 	virtual void fillLHEInfo(const edm::Event &iEvent);
 	virtual void fillGENInfo(const edm::Event &iEvent);            // fill MET information
 	virtual void fillGenOthersInfo(const edm::Event &iEvent);
@@ -131,7 +136,9 @@ private:
 	std::string processName;
 	std::string theElectronID;
 
-	HLTConfigProvider hltConfig_;
+ 	HLTConfigProvider hltConfig_;
+	HLTPrescaleProvider *hltPrescale_;
+	l1t::L1TGlobalUtil *L1GtUtils_;
 
 	// -- Tokens (for 76X) -- //
 	edm::EDGetTokenT< std::vector<pat::Muon> > 						MuonToken;
@@ -165,6 +172,7 @@ private:
 	edm::EDGetTokenT< edm::TriggerResults > 						TriggerTokenPAT;
 	edm::EDGetTokenT< std::vector<pat::TriggerObjectStandAlone> > 				TriggerObjectToken;
 	//edm::EDGetTokenT< trigger::TriggerEvent > 						TriggerSummaryToken;
+	edm::EDGetTokenT< BXVector<GlobalAlgBlk> >         					GlobalAlgBlkToken;
 
 	edm::EDGetTokenT< GenEventInfoProduct > 						GenEventInfoToken;
 	edm::EDGetTokenT< reco::BeamSpot > 							BeamSpotToken;
@@ -241,7 +249,10 @@ private:
 	vector< std::string> vec_inputHLTList_;
 
 	std::vector<std::string > MuonHLT;
-	std::vector<int > MuonHLTPS;
+	std::vector<int> MuonHLTPS;
+	std::vector<int> MuonL1PS;
+	std::vector<std::vector<std::pair<std::string,int>>> L1PSinDetail;
+//	PrescaleDetailsVector PSinDetail;
 	std::vector<std::string > trigModuleNames;
 	std::vector<std::string > trigModuleNames_preFil;
 
@@ -333,6 +344,12 @@ private:
 	int _HLT_trigFired[MPSIZE];
 	std::vector<std::string> _HLT_trigName;
 	std::vector<int> _HLT_trigPS;
+        std::vector<int> _L1seed_trigPS;
+	std::vector<std::vector<std::pair<std::string,int>>> _L1seed_trigPSinDetail;
+	vector<std::string> vec_L1Seed_;
+	vector<bool> vec_L1Bit_;
+	vector<int>  vec_L1Prescale_;
+//	PrescaleDetailsVector _prescale_details;
 	double _HLT_trigPt[MPSIZE];
 	double _HLT_trigEta[MPSIZE];
 	double _HLT_trigPhi[MPSIZE];

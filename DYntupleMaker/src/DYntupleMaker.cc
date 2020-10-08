@@ -9,6 +9,7 @@
 //   H.D.Yoo           Purdue University
 //   K.P.Lee           Seoul National University
 //   D.M.Pai           Seoul National University
+//   M.Ambrozas	       Vilnius University
 //
 //--------------------------------------------------
 
@@ -19,6 +20,7 @@
 ////////////////////////////////
 #include <memory>
 #include <iostream>
+#include <vector>
 
 //////////////////////
 // -- FrameWorks -- //
@@ -146,6 +148,7 @@
 #include <TLorentzVector.h>
 #include <TVector3.h>
 #include <boost/foreach.hpp>
+#include <TInterpreter.h>
 
 //
 // class decleration
@@ -190,6 +193,7 @@ phoMediumIdMapToken 		( consumes< edm::ValueMap<bool> >			(iConfig.getUntrackedP
 TriggerToken 			( consumes< edm::TriggerResults >  			(iConfig.getUntrackedParameter<edm::InputTag>("TriggerResults")) ),
 TriggerTokenPAT 		( consumes< edm::TriggerResults >  			(iConfig.getUntrackedParameter<edm::InputTag>("TriggerResultsPAT")) ),
 TriggerObjectToken 		( consumes< std::vector<pat::TriggerObjectStandAlone> > (iConfig.getUntrackedParameter<edm::InputTag>("TriggerObject")) ),
+GlobalAlgBlkToken		( consumes< BXVector< GlobalAlgBlk > >			(iConfig.getUntrackedParameter<edm::InputTag>("globalAlgBlk")) ),
 // -- Else -- //
 GenEventInfoToken 		( consumes< GenEventInfoProduct >  			(iConfig.getUntrackedParameter<edm::InputTag>("GenEventInfo")) ),
 BeamSpotToken			( consumes< reco::BeamSpot > 				(iConfig.getUntrackedParameter<edm::InputTag>("BeamSpot")) ),
@@ -201,12 +205,20 @@ prefweight_token 		( consumes< double >					(iConfig.getUntrackedParameter<edm::
 prefweightup_token 		( consumes< double >					(iConfig.getUntrackedParameter<edm::InputTag>("prefweightup")) ),
 prefweightdown_token 		( consumes< double >					(iConfig.getUntrackedParameter<edm::InputTag>("prefweightdown")) )
 {
+	gInterpreter->GenerateDictionary("std::vector<std::vector<std::pair<std::string,int>>>", "vector");
 	nEvt = 0;
 
 	isMC                              = iConfig.getUntrackedParameter<bool>("isMC");
 	processName                       = iConfig.getUntrackedParameter<string>("processName", "HLT");
 	theDebugLevel                     = iConfig.getUntrackedParameter<int>("DebugLevel", 0);
 
+	vec_inputHLTList_ = iConfig.getUntrackedParameter<std::vector<std::string>>("InputHLTList");
+	hltPrescale_ = new HLTPrescaleProvider(iConfig, consumesCollector(), *this);
+	vec_L1Seed_ = iConfig.getUntrackedParameter<std::vector<std::string>>("L1SeedList");
+	L1GtUtils_  = new l1t::L1TGlobalUtil(iConfig, consumesCollector());
+	cout << "# l1 triggers: " << vec_L1Seed_.size() << endl;
+	for (unsigned int i_l1=0; i_l1<vec_L1Seed_.size(); i_l1++)
+		cout << "  " << vec_L1Seed_[i_l1] << endl;
 	// -- Consumes -- //
 
 
@@ -276,8 +288,6 @@ prefweightdown_token 		( consumes< double >					(iConfig.getUntrackedParameter<e
 	// 	PileUpMC_ = iConfig.getParameter< std::vector<double> >("PileUpMC");
 	// }
 
-  vec_inputHLTList_ = iConfig.getUntrackedParameter<std::vector<std::string> >("InputHLTList");
-
 }
 
 DYntupleMaker::~DYntupleMaker() { }
@@ -289,6 +299,8 @@ DYntupleMaker::~DYntupleMaker() { }
 // ------------ method called to for each event  ------------ //
 void DYntupleMaker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 {
+	cout << "Analyze function invoked" << endl;
+
 	iSetup.get<TransientTrackRecord>().get("TransientTrackBuilder",theTTBuilder);
 	 
 	///////////////////////////////////////////
@@ -332,11 +344,19 @@ void DYntupleMaker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSe
 	photonEt = 0;
 	chargedHadronEt = 0;
 	neutralHadronEt = 0;
-
+	
+	cout << "Trigger vector clearing comming up" << endl;
 	// -- trigger object -- //
 	_HLT_ntrig = -1;
 	_HLT_trigName.clear();
-	_HLT_trigPS.clear();
+ 	_HLT_trigPS.clear();
+	_L1seed_trigPS.clear();
+	_L1seed_trigPSinDetail.clear();
+	vec_L1Seed_.clear();
+        vec_L1Bit_.clear();
+        vec_L1Prescale_.clear();	
+//	_prescale_details.Vector.clear();
+	cout << "Trigger vectors cleared" << endl;
 
 	// -- PU reweight -- //
 	PUweight = -1;
@@ -377,6 +397,8 @@ void DYntupleMaker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSe
 	vtxTrkEMuChi2_TuneP.clear();
 
 	PDFWeights.clear();
+
+	cout << "VECTORS CLEARED" << endl;
 
 	for( int i = 0; i < MPSIZE; i++ )
 	{
@@ -700,6 +722,7 @@ void DYntupleMaker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSe
 	} // -- End of "i" iteration -- //
 
 	// cout << "##### Analyze:Initialization #####" << endl;
+	cout << "INITIALIZATION FINISHED" << endl;
 
 	nEvt++;
 	// -- run number & event number -- //
@@ -779,9 +802,16 @@ void DYntupleMaker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSe
 		iEvent.getByToken(prefweightdown_token, theprefweightdown ) ;
 		_prefiringweightdown =(*theprefweightdown);
 	}
+	
+	cout << "Reweighting info collected" << endl;
 
 	// fills
-	if( theStoreHLTReportFlag ) hltReport(iEvent);
+	if( theStoreHLTReportFlag )
+	{
+		hltReport(iEvent, iSetup);
+		fill_L1(iEvent, iSetup);
+	}
+	cout << "HLT info collected" << endl;
 	if( theStorePriVtxFlag ) fillPrimaryVertex(iEvent);
 	if( theStoreJetFlag ) fillJet(iEvent);
 	if( theStoreMETFlag ) fillMET(iEvent);
@@ -792,12 +822,15 @@ void DYntupleMaker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSe
 	if( theStoreMuonFlag ) fillMuons(iEvent, iSetup);
 	if( theStoreElectronFlag ) fillElectrons(iEvent, iSetup);
 	if( theStoreTTFlag ) fillTT(iEvent);
+	cout << "Other event stuff collected" << endl;
 	DYTree->Fill();
+	cout << "Tree filled" << endl;
 }
 
 // ------------ method called once each job just before starting event loop  ------------ //
 void DYntupleMaker::beginJob()
 {
+	cout << "beginJob invoked" << endl;
 	// if( isMC )
 	// {
 	// 	// Pileup Reweight: 2012, Summer12_S10
@@ -861,9 +894,15 @@ void DYntupleMaker::beginJob()
 		DYTree->Branch("HLT_trigFired", &_HLT_trigFired,"HLT_trigFired[HLT_ntrig]/I");
 		DYTree->Branch("HLT_trigName", &_HLT_trigName);
 		DYTree->Branch("HLT_trigPS", &_HLT_trigPS);
+		DYTree->Branch("L1seed_trigPS", &_L1seed_trigPS);
+		DYTree->Branch("L1seed_trigPSinDetail", &_L1seed_trigPSinDetail);
+//		DYTree->Branch("prescale_details", "PrescaleDetailsVector", &_prescale_details);
 		DYTree->Branch("HLT_trigPt", &_HLT_trigPt,"HLT_trigPt[HLT_ntrig]/D");
 		DYTree->Branch("HLT_trigEta", &_HLT_trigEta,"HLT_trigEta[HLT_ntrig]/D");
 		DYTree->Branch("HLT_trigPhi", &_HLT_trigPhi,"HLT_trigPhi[HLT_ntrig]/D");
+		DYTree->Branch("L1_trigName", &vec_L1Seed_);
+		DYTree->Branch("L1_trigFired", &vec_L1Bit_);
+		DYTree->Branch("L1_Prescale", &vec_L1Prescale_);
 	}
 
 	if(theStoreJetFlag)
@@ -1378,10 +1417,12 @@ void DYntupleMaker::beginJob()
 		DYTree->Branch("pfMET_Type1_PhiCor_Py", &pfMET_Type1_PhiCor_Py,"pfMET_Type1_PhiCor_Py/D");
 		DYTree->Branch("pfMET_Type1_PhiCor_SumEt", &pfMET_Type1_PhiCor_SumEt,"pfMET_Type1_PhiCor_SumEt/D");
 	}
+	cout << "beginJob finished" << endl;
 }
 
 void DYntupleMaker::beginRun(const Run & iRun, const EventSetup & iSetup)
 {
+	cout << "beginRun invoked" << endl;
 	// const int nTrigName = 66;
 	// string trigs[nTrigName] = 
 	// {
@@ -1462,21 +1503,31 @@ void DYntupleMaker::beginRun(const Run & iRun, const EventSetup & iSetup)
 	// 	"HLT_DoubleEle37_Ele27_CaloIdL_GsfTrkIdVL_v*",
 	// };
 
+	cout << "Clearing trigger vectors..";
 	MuonHLT.clear();
 	MuonHLTPS.clear();
+	MuonL1PS.clear();
+	L1PSinDetail.clear();
+//	PSinDetail.Vector.clear();
+	cout << "done." << endl;
+
+	bool changed(true);
+	hltPrescale_->init(iRun, iSetup, processName, changed);
+	if (changed)
+		cout << "Prescale config changed." << endl;
 
 	// for( int i = 0; i < nTrigName; i++ )
 	// 	MuonHLT.push_back(trigs[i]);
 
-  for( auto HLTPath : vec_inputHLTList_ )
-    MuonHLT.push_back( HLTPath );
+	for( auto HLTPath : vec_inputHLTList_ )
+		MuonHLT.push_back( HLTPath );
 
 	int ntrigName = MuonHLT.size();
 
-  // int listRemoval[nTrigName] = {-1};
-  int *listRemoval = new int[ntrigName];
-  for(int i=0; i<ntrigName; i++)
-    listRemoval[i] = -1;
+	// int listRemoval[nTrigName] = {-1};
+	int *listRemoval = new int[ntrigName];
+	for(int i=0; i<ntrigName; i++)
+		listRemoval[i] = -1;
 
 	bool changedConfig;
 	if (!hltConfig_.init(iRun, iSetup, processName, changedConfig))
@@ -1523,8 +1574,8 @@ void DYntupleMaker::beginRun(const Run & iRun, const EventSetup & iSetup)
 					std::vector<std::string> moduleNames = hltConfig_.moduleLabels( *match );
 
 					// -- find prescale value -- //
-					int _preScaleValue = hltConfig_.prescaleValue(0, *match);
-					MuonHLTPS.push_back(_preScaleValue);
+					//int _preScaleValue = hltConfig_.prescaleValue(0, *match); // This takes only the 0th prescale config set, which is wrong
+					//MuonHLTPS.push_back(_preScaleValue);
 
 					// cout << "Filter name: " << trigModuleNames[moduleNames.size()-2] << endl;
 					// for( size_t j = 0; j < moduleNames.size(); j++)
@@ -1580,15 +1631,15 @@ void DYntupleMaker::beginRun(const Run & iRun, const EventSetup & iSetup)
 
 		itmp++;
 	}
-  delete[] listRemoval; // -- not used anymore
+	delete[] listRemoval; // -- not used anymore
 
 	ntrigName = MuonHLT.size();
 
 	cout << "# triggers after removing un-available triggers: " << ntrigName << " -> " << ntrigName << endl;
 
-	cout << "\n[Prescales]" << endl;
-	for( int i = 0; i < ntrigName; i++ )
-		cout << "[" << MuonHLT[i] << "]\t\t" << MuonHLTPS[i] << endl;
+	//cout << "\n[Prescales]" << endl;
+	//for( int i = 0; i < ntrigName; i++ )
+	//	cout << "[" << MuonHLT[i] << "]\t\t" << MuonHLTPS[i] << endl;
 
 	// trigger filters
 	for( int itrig = 0; itrig < ntrigName; itrig++ )
@@ -1608,7 +1659,7 @@ void DYntupleMaker::endJob()
 ///////////////////////////////////////////////////////
 // -- makes hlt report and fills it to the ntuple -- //
 ///////////////////////////////////////////////////////
-void DYntupleMaker::hltReport(const edm::Event &iEvent)
+void DYntupleMaker::hltReport(const edm::Event &iEvent, const edm::EventSetup &iSetup)
 {
 	int ntrigName = MuonHLT.size();
 
@@ -1640,6 +1691,17 @@ void DYntupleMaker::hltReport(const edm::Event &iEvent)
 					if( trigName.triggerIndex(*match) >= (unsigned int)ntrigs ) continue;
 					if( trigResult->accept(trigName.triggerIndex(*match)) ) trigFired[itrigName] = true;
 					//cout << "trigger fire = " << trigFired[itrigName] << endl;
+						
+					std::pair <int, int> prescales = hltPrescale_->prescaleValues(iEvent, iSetup, *match);
+
+					std::pair<std::vector<std::pair<std::string,int> >,int> prescalesInDetail = hltPrescale_->prescaleValuesInDetail(iEvent, iSetup, *match);
+//					PrescaleDetails prescaleDetails = PrescaleDetails(prescalesInDetail);
+
+					int _l1prescale = /*(prescales.first<0) ? 1 :*/ prescales.first; // If prescaleValues returns -1, there was more than 1 L1 seed (in HLT_Photon case all those seeds are unprescaled)
+					MuonL1PS.push_back(_l1prescale);
+					MuonHLTPS.push_back(prescales.second);
+					L1PSinDetail.push_back(prescalesInDetail.first);
+//					PSinDetail.Vector.push_back(prescaleDetails);
 				}
 
 			}
@@ -1801,6 +1863,9 @@ void DYntupleMaker::hltReport(const edm::Event &iEvent)
 						// cout << "\t\t\t[Matched]: filterName = " << filterName << ", Trigger Name = " << MuonHLT[itf] << endl;
 						name = MuonHLT[itf];
 						int _ps = MuonHLTPS[itf];
+						int _l1ps = MuonL1PS[itf];
+						std::vector<std::pair<std::string,int> > _l1psindetail = L1PSinDetail[itf];
+//						PrescaleDetails _psdetails = PSinDetail.Vector[itf];
 						_HLT_trigType[ntrigTot] = itf;
 						_HLT_trigFired[ntrigTot] = trigFired[itf];
 						_HLT_trigPt[ntrigTot] = obj.pt();
@@ -1808,6 +1873,9 @@ void DYntupleMaker::hltReport(const edm::Event &iEvent)
 						_HLT_trigPhi[ntrigTot] = obj.phi();
 						_HLT_trigName.push_back(name);
 						_HLT_trigPS.push_back(_ps);
+						_L1seed_trigPS.push_back(_l1ps);
+						_L1seed_trigPSinDetail.push_back(_l1psindetail);
+//						_prescale_details.Vector.push_back(_psdetails);
 						ntrigTot++;
 					}
 
@@ -1827,6 +1895,27 @@ void DYntupleMaker::hltReport(const edm::Event &iEvent)
 
 }
 
+
+///////////////////////////////
+// -- Get L1 trigger info -- //
+///////////////////////////////
+void DYntupleMaker::fill_L1(const edm::Event &iEvent, const edm::EventSetup &iSetup)
+{
+	L1GtUtils_->retrieveL1(iEvent, iSetup, GlobalAlgBlkToken);
+
+	for (unsigned int i_seed=0; i_seed<vec_L1Seed_.size(); i_seed++)
+	{
+		bool isFired = false;
+		L1GtUtils_->getFinalDecisionByName(string(vec_L1Seed_[i_seed]), isFired);
+
+		int L1Prescale = -999;
+		L1GtUtils_->getPrescaleByName(string(vec_L1Seed_[i_seed]), L1Prescale);
+
+		vec_L1Bit_.push_back(isFired);
+		vec_L1Prescale_.push_back(L1Prescale);
+	}
+}
+
 ///////////////////////////////////
 // -- Get Primary vertex info -- //
 ///////////////////////////////////
@@ -1836,7 +1925,7 @@ void DYntupleMaker::fillPrimaryVertex(const edm::Event &iEvent)
 	iEvent.getByToken(PrimaryVertexToken, pvHandle);
 	const reco::VertexCollection vtx = *(pvHandle.product());
 
-	if( vtx.size() > 2 && theDebugLevel > 0) cout << "Reconstructed "<< vtx.size() << " vertices" << endl;
+	if (vtx.size() > 2 && theDebugLevel > 0) cout << "Reconstructed "<< vtx.size() << " vertices" << endl;
 	if (vtx.size() > 0 )
 	{
 		PVtrackSize = vtx.front().tracksSize();
@@ -3284,7 +3373,7 @@ void DYntupleMaker::fillTT(const edm::Event &iEvent)
 
 void DYntupleMaker::endRun(const Run & iRun, const EventSetup & iSetup)
 {
-
+	cout << "endRun invoked" << endl;
 	if( this->theStoreLHEFlag ) // -- only when LHE information is available (ex> aMC@NLO, Powheg) case. Samples generated by pythia8 doesn't work! -- //
 	{
 		// -- LHE information -- //
@@ -3304,6 +3393,7 @@ void DYntupleMaker::endRun(const Run & iRun, const EventSetup & iSetup)
 		}
 		cout << "##### End of information about PDF weights #####" << endl;
 	}
+	cout << "endRun finished" << endl;
 }
 
 //define this as a plug-in

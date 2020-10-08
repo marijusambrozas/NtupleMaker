@@ -44,7 +44,7 @@ Twiki: https://twiki.cern.ch/twiki/bin/view/CMS/SNUCMSYooDYntuple
 	git cms-merge-topic lathomas:L1Prefiring_8_0_32
 	
 	# -- this ntuple maker -- #
-	git clone https://github.com/KyeongPil-Lee/NtupleMaker.git Phys -b 80X # latest version
+	git clone https://github.com/marijusambrozas/NtupleMaker.git Phys -b 80X # latest version
 	
 	# -- copy the MET correction recipe (80X) -- #
 	cp Phys/DYntupleMaker/python/METCorr/multPhiCorr_*.py JetMETCorrections/Type1MET/python/

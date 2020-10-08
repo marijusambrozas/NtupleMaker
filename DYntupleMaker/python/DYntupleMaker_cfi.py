@@ -1,6 +1,7 @@
 import FWCore.ParameterSet.Config as cms
 
 from Phys.DYntupleMaker.HLTList import GetList_HLT
+from Phys.DYntupleMaker.L1SeedList import GetL1SeedList
 
 DYntupleMaker = cms.EDAnalyzer("DYntupleMaker",
 	isMC = cms.untracked.bool(True),
@@ -89,4 +90,9 @@ DYntupleMaker = cms.EDAnalyzer("DYntupleMaker",
 
 	# -- HLT list -- #
 	InputHLTList = cms.untracked.vstring(GetList_HLT()),
+	globalAlgBlk = cms.untracked.InputTag("gtStage2Digis"),
+	l1tAlgBlkInputTag     = cms.InputTag("gtStage2Digis"), # -- for L1TGlobalUtil
+	l1tExtBlkInputTag     = cms.InputTag("gtStage2Digis"), # -- for L1TGlobalUtil
+	ReadPrescalesFromFile = cms.bool( False ),             # -- for L1TGlobalUtil
+	L1SeedList            = cms.untracked.vstring(GetL1SeedList())
 )
