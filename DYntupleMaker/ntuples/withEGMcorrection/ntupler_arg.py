@@ -18,7 +18,7 @@ options.register('globalTag',
 
 options.register('inputFile',
 #                  "file:/u/user/kplee/scratch/ROOTFiles_Test/80X/MINIAOD_DYLL_M50toInf_Morind17.root", # default value
-                  "/store/data/Run2016B/SinglePhoton/MINIAOD/03Feb2017_ver2-v2/100000/D430BD98-58EB-E611-9DD9-008CFA1974DC.root", #root://cms-xrootd.gridpp.ac.uk//
+                  "root://cms-xrootd.gridpp.ac.uk//store/data/Run2016B/SinglePhoton/MINIAOD/03Feb2017_ver2-v2/100000/D430BD98-58EB-E611-9DD9-008CFA1974DC.root",
                   VarParsing.multiplicity.singleton, # singleton or list
                   VarParsing.varType.string,         # string, int, or float
                   "input EDM file location (MINIAOD). Don't forget to add 'file:' for the local file ")
