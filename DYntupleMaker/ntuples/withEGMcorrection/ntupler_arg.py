@@ -8,7 +8,7 @@ from FWCore.ParameterSet.VarParsing import VarParsing
 options = VarParsing('analysis')
 
 options.register('globalTag',
-                  "80X_mcRun2_asymptotic_2016_TrancheIV_v6", # default value
+                  "80X_dataRun2_2016SeptRepro_v7", # default value
                   VarParsing.multiplicity.singleton, # singleton or list
                   VarParsing.varType.string,         # string, int, or float
                   "Global tag used for the ntuple production")
@@ -17,7 +17,7 @@ options.register('globalTag',
 # -- GT for MC (Moriond17): 80X_mcRun2_asymptotic_2016_TrancheIV_v6
 
 options.register('inputFile',
-                  "file:/u/user/kplee/scratch/ROOTFiles_Test/80X/MINIAOD_DYLL_M50toInf_Morind17.root", # default value
+                  "root://cms-xrootd.gridpp.ac.uk//store/data/Run2016B/SinglePhoton/MINIAOD/03Feb2017_ver2-v2/100000/D430BD98-58EB-E611-9DD9-008CFA1974DC.root", # default value
                   VarParsing.multiplicity.singleton, # singleton or list
                   VarParsing.varType.string,         # string, int, or float
                   "input EDM file location (MINIAOD). Don't forget to add 'file:' for the local file ")
@@ -32,19 +32,19 @@ options.register('useSinglePhotonTrigger',
                   "Include single photon triggers if true")
 
 options.register('nEvent',
-                  -1, # default value
+                  1000, # default value
                   VarParsing.multiplicity.singleton, # singleton or list
                   VarParsing.varType.int,         # string, int, or float
                   "number of events to run")
 
 options.register('isMC',
-                  1, # default value
+                  0, # default value
                   VarParsing.multiplicity.singleton, # singleton or list
                   VarParsing.varType.int,         # string, int, or float
                   "isMC")
 
 options.register('isSignalMC',
-                  1, # default value
+                  0, # default value
                   VarParsing.multiplicity.singleton, # singleton or list
                   VarParsing.varType.int,         # string, int, or float
                   "save LHE information related to PDF systematics. It is always false if isMC = false.")
