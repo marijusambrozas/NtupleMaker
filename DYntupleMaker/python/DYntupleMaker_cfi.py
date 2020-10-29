@@ -1,6 +1,7 @@
 import FWCore.ParameterSet.Config as cms
 
 from Phys.DYntupleMaker.HLTList import GetList_HLT
+from Phys.DYntupleMaker.L1SeedList import GetL1SeedList
 
 DYntupleMaker = cms.EDAnalyzer("DYntupleMaker",
 	isMC = cms.untracked.bool(True),
@@ -54,6 +55,12 @@ DYntupleMaker = cms.EDAnalyzer("DYntupleMaker",
 	TriggerResults = cms.untracked.InputTag("TriggerResults", "", "HLT"),
 	TriggerResultsPAT = cms.untracked.InputTag("TriggerResults", "", "PAT"),
 	TriggerObject = cms.untracked.InputTag("selectedPatTrigger"),
+	######### L1 TEST
+	globalAlgBlk = cms.untracked.InputTag("gtStage2Digis"),
+	L1SeedList = cms.untracked.vstring(GetL1SeedList()),
+	l1tAlgBlkInputTag = cms.InputTag("gtStage2Digis"),
+	l1tExtBlkInputTag = cms.InputTag("gtStage2Digis"),
+	ReadPrescalesFromFile = cms.bool(False),
 
 	# -- Else -- #
 	GenEventInfo = cms.untracked.InputTag("generator"),
@@ -89,4 +96,11 @@ DYntupleMaker = cms.EDAnalyzer("DYntupleMaker",
 
 	# -- HLT list -- #
 	InputHLTList = cms.untracked.vstring(GetList_HLT()),
+
+	# -- Trigger test from https://twiki.cern.ch/twiki/bin/view/CMSPublic/WorkBookMiniAOD2016#Trigger -- #
+	bits = cms.InputTag("TriggerResults","","HLT"),
+	prescales = cms.InputTag("patTrigger"),
+	prescales_l1min = cms.InputTag("patTrigger:l1min"),
+	prescales_l1max = cms.InputTag("patTrigger:l1max"),
+	objects = cms.InputTag("selectedPatTrigger"),
 )

@@ -18,6 +18,7 @@
 // -- system include files -- //
 ////////////////////////////////
 #include <memory>
+#include <cmath>
 #include <iostream>
 
 //////////////////////
@@ -105,6 +106,7 @@
 #include "DataFormats/HLTReco/interface/TriggerEvent.h"
 #include "DataFormats/PatCandidates/interface/TriggerObjectStandAlone.h"
 //#include "DataFormats/PatCandidates/interface/TriggerPrimitive.h"
+#include "DataFormats/PatCandidates/interface/PackedTriggerPrescales.h"
 
 ////////////////
 // -- Else -- //
@@ -190,6 +192,8 @@ phoMediumIdMapToken 		( consumes< edm::ValueMap<bool> >			(iConfig.getUntrackedP
 TriggerToken 			( consumes< edm::TriggerResults >  			(iConfig.getUntrackedParameter<edm::InputTag>("TriggerResults")) ),
 TriggerTokenPAT 		( consumes< edm::TriggerResults >  			(iConfig.getUntrackedParameter<edm::InputTag>("TriggerResultsPAT")) ),
 TriggerObjectToken 		( consumes< std::vector<pat::TriggerObjectStandAlone> > (iConfig.getUntrackedParameter<edm::InputTag>("TriggerObject")) ),
+///////// L1 TEST
+t_globalAlgBlk_        		( consumes< BXVector< GlobalAlgBlk > >   		(iConfig.getUntrackedParameter<edm::InputTag>("globalAlgBlk")) ),
 // -- Else -- //
 GenEventInfoToken 		( consumes< GenEventInfoProduct >  			(iConfig.getUntrackedParameter<edm::InputTag>("GenEventInfo")) ),
 BeamSpotToken			( consumes< reco::BeamSpot > 				(iConfig.getUntrackedParameter<edm::InputTag>("BeamSpot")) ),
@@ -199,7 +203,13 @@ PileUpInfoToken 		( consumes< std::vector< PileupSummaryInfo > >  	(iConfig.getU
 // -- Level 1 ECAL prefiring -- //
 prefweight_token 		( consumes< double >					(iConfig.getUntrackedParameter<edm::InputTag>("prefweight")) ),
 prefweightup_token 		( consumes< double >					(iConfig.getUntrackedParameter<edm::InputTag>("prefweightup")) ),
-prefweightdown_token 		( consumes< double >					(iConfig.getUntrackedParameter<edm::InputTag>("prefweightdown")) )
+prefweightdown_token 		( consumes< double >					(iConfig.getUntrackedParameter<edm::InputTag>("prefweightdown")) ),
+// Trigger part from example: https://twiki.cern.ch/twiki/bin/view/CMSPublic/WorkBookMiniAOD2016#Trigger
+triggerBits_			( consumes< /*std::vector<*/edm::TriggerResults/*>*/ >		(iConfig.getParameter<edm::InputTag>("bits"))),
+triggerPrescales_		( consumes< /*std::vector<*/pat::PackedTriggerPrescales/*>*/ >	(iConfig.getParameter<edm::InputTag>("prescales"))),
+triggerPrescales_l1min_		( consumes< /*std::vector<*/pat::PackedTriggerPrescales/*>*/ >  (iConfig.getParameter<edm::InputTag>("prescales_l1min"))),
+triggerPrescales_l1max_		( consumes< /*std::vector<*/pat::PackedTriggerPrescales/*>*/ >  (iConfig.getParameter<edm::InputTag>("prescales_l1max"))),
+triggerObjects_			( consumes< std::vector<pat::TriggerObjectStandAlone> >	(iConfig.getParameter<edm::InputTag>("objects")))
 {
 	nEvt = 0;
 
@@ -210,7 +220,6 @@ prefweightdown_token 		( consumes< double >					(iConfig.getUntrackedParameter<e
 	// -- Consumes -- //
 
 
-
 	// -- Object Labels -- //
 	// theMuonLabel                      = iConfig.getUntrackedParameter<edm::InputTag>("Muon", edm::InputTag("selectedPatMuonsPFlow"));
 	// theElectronLabel                  = iConfig.getUntrackedParameter<edm::InputTag>("Electron", edm::InputTag("gedGsfElectrons"));
@@ -218,7 +227,7 @@ prefweightdown_token 		( consumes< double >					(iConfig.getUntrackedParameter<e
 	// theJetLabel                       = iConfig.getUntrackedParameter<edm::InputTag>("Jet", edm::InputTag("selectedPatJets"));
 	// theMETLabel                       = iConfig.getUntrackedParameter<edm::InputTag>("MET", edm::InputTag("patMETs"));
 	// theGenParticleLabel				  = iConfig.getUntrackedParameter<edm::InputTag>("GenParticle", edm::InputTag("genParticles"));
-	
+
 	// -- for Electrons -- //
 	// rho                               = iConfig.getUntrackedParameter<edm::InputTag>("rho", edm::InputTag("fixedGridRhoFastjetAll"));
 	// eleVetoIdMap                      = iConfig.getUntrackedParameter<edm::InputTag>("eleVetoIdMap", edm::InputTag("egmGsfElectronIDs:cutBasedElectronID-Spring15-25ns-V1-standalone-veto"));
@@ -236,27 +245,26 @@ prefweightdown_token 		( consumes< double >					(iConfig.getUntrackedParameter<e
 	effAreaNeuHadronsFile             = iConfig.getUntrackedParameter<edm::FileInPath>( "effAreaNeuHadFile", edm::FileInPath("RecoEgamma/PhotonIdentification/data/PHYS14/effAreaPhotons_cone03_pfNeutralHadrons_V2.txt") );
 	effAreaPhotonsFile                = iConfig.getUntrackedParameter<edm::FileInPath>( "effAreaPhoFile", edm::FileInPath("RecoEgamma/PhotonIdentification/data/PHYS14/effAreaPhotons_cone03_pfPhotons_V2.txt") );
 
- 	// -- for Jet -- //
+	// -- for Jet -- //
 	// theBDiscriminant_alg1             = iConfig.getUntrackedParameter<double>("BDiscriminant_tcheff", 0.7);
 	// theBDiscriminant_alg2             = iConfig.getUntrackedParameter<double>("BDiscriminant_tchpur", 0.7);
 	// theBDiscriminant_alg3             = iConfig.getUntrackedParameter<double>("BDiscriminant_ssv", 2.05);
 
 	// -- for MET -- //
-	// pfMetCollection_                  = iConfig.getUntrackedParameter<edm::InputTag>("pfMET", edm::InputTag("pfMet"));
+	// pfMetCollection_                  = iConfig.getUntrackedParameter<edm::InputTag>("pfMET", edm::InputTag("pfMet"));
 
 	// -- Else -- //
 	// theBeamSpot                       = iConfig.getUntrackedParameter<edm::InputTag>("BeamSpot", edm::InputTag("offlineBeamSpot"));
 	// thePrimaryVertexLabel			  = iConfig.getUntrackedParameter<edm::InputTag>("PrimaryVertex", edm::InputTag("offlinePrimaryVerticesWithBS"));
 	// theTrackLabel                     = iConfig.getUntrackedParameter<edm::InputTag>("Track", edm::InputTag("generalTracks"));
 	// thePileUpInfoLabel				  = iConfig.getUntrackedParameter<edm::InputTag>("PileUpInfo", edm::InputTag("addPileupInfo"));
-	
 
 	// -- Store Flags -- //
 	theStorePriVtxFlag                = iConfig.getUntrackedParameter<bool>("StorePriVtxFlag", true);
 	theStoreJetFlag                   = iConfig.getUntrackedParameter<bool>("StoreJetFlag", false);
 	theStoreMETFlag                   = iConfig.getUntrackedParameter<bool>("StoreMETFlag", false);
 	theStoreHLTReportFlag             = iConfig.getUntrackedParameter<bool>("StoreHLTReportFlag", true);
-	
+
 	theStoreMuonFlag              	  = iConfig.getUntrackedParameter<bool>("StoreMuonFlag", true);
 	theStoreElectronFlag              = iConfig.getUntrackedParameter<bool>("StoreElectronFlag", true);
 	theStoreLHEFlag                   = iConfig.getUntrackedParameter<bool>("StoreLHEFlag", false);
@@ -276,7 +284,11 @@ prefweightdown_token 		( consumes< double >					(iConfig.getUntrackedParameter<e
 	// 	PileUpMC_ = iConfig.getParameter< std::vector<double> >("PileUpMC");
 	// }
 
-  vec_inputHLTList_ = iConfig.getUntrackedParameter<std::vector<std::string> >("InputHLTList");
+	vec_inputHLTList_ = iConfig.getUntrackedParameter<std::vector<std::string> >("InputHLTList");
+
+	/////// L1 TEST
+	vec_L1Seed_ = iConfig.getUntrackedParameter<std::vector<std::string> >("L1SeedList");
+	L1GtUtils_  = new l1t::L1TGlobalUtil(iConfig, consumesCollector());
 
 }
 
@@ -290,7 +302,7 @@ DYntupleMaker::~DYntupleMaker() { }
 void DYntupleMaker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 {
 	iSetup.get<TransientTrackRecord>().get("TransientTrackBuilder",theTTBuilder);
-	 
+	
 	///////////////////////////////////////////
 	// -- initialize for ntuple variables -- //
 	///////////////////////////////////////////
@@ -323,7 +335,6 @@ void DYntupleMaker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSe
 	PVz = -1000;
 	PVprob = -1;
 
-
 	nLHEParticle = -1;
 	GENnPair = -1;
 
@@ -337,14 +348,18 @@ void DYntupleMaker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSe
 	_HLT_ntrig = -1;
 	_HLT_trigName.clear();
 	_HLT_trigPS.clear();
-
+	_HLT_trigPS_l1min.clear();
+	_HLT_trigPS_l1max.clear();
+	////////// L1 TEST
+	vec_L1Bit_.clear();
+	vec_L1Prescale_.clear();
+	
 	// -- PU reweight -- //
 	PUweight = -1;
 	pileUpReweightIn = pileUpReweight = 1.0;
 	pileUpReweightPlus = pileUpReweightMinus = 0.0;
 	pileUpReweightInMuonPhys = pileUpReweightMuonPhys = 1.0;
 	pileUpReweightPlusMuonPhys = pileUpReweightMinusMuonPhys = 0.0;
-
 
 	CosAngle.clear();
 	vtxTrkCkt1Pt.clear();
@@ -401,7 +416,7 @@ void DYntupleMaker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSe
 		Jet_NHEMfrac[i] = -100; 
 		Jet_CHEMfrac[i] = -100; 
 		Jet_CHmulti[i] = -100; 
-		Jet_NHmulti[i] = -100;
+		Jet_NHmulti[i] = -100;		
 
 		// electron
 		Electron_Energy[i] = Electron_et[i] = Electron_pT[i] = Electron_eta[i] = Electron_phi[i] = -100;
@@ -409,11 +424,11 @@ void DYntupleMaker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSe
 		Electron_Px[i] = Electron_Py[i] = Electron_Pz[i] = -9999;
 		Electron_charge[i] = -100;
 
-                // -- more charge information
-                Electron_scPixCharge[i] = -100;
+		// -- more charge information
+		Electron_scPixCharge[i] = -100;
                 Electron_isGsfCtfScPixConsistent[i] = false;
                 Electron_isGsfScPixConsistent[i] = false;
-                Electron_isGsfCtfConsistent[i] = false;
+                Electron_isGsfCtfConsistent[i] = false;		
 
 		Electron_gsfpT[i] = Electron_gsfEta[i] = Electron_gsfPhi[i] = -100;
 		Electron_gsfPx[i] = Electron_gsfPy[i] = Electron_gsfPz[i] = -9999;
@@ -456,7 +471,7 @@ void DYntupleMaker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSe
 		Electron_hasConversion[i] = false;
 		Electron_mHits[i] = -9999;
 
-                Electron_trkIso03[i] = -9999;
+		Electron_trkIso03[i] = -9999;
                 Electron_ecalIso03[i] = -9999;
                 Electron_hcalIso03[i] = -9999;
 
@@ -531,7 +546,7 @@ void DYntupleMaker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSe
 
 		// trigger
 		Muon_nTrig[i] = Muon_triggerObjectType[i] = Muon_filterName[i] = -1;
-
+		
 		// Muon kinematics
 		Muon_phi[i] = Muon_eta[i] = Muon_cktpT[i] = Muon_pT[i] = -100;
 		Muon_dB[i] = -999;
@@ -598,7 +613,6 @@ void DYntupleMaker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSe
 		Muon_GLB_Pz[i] = -9999;
 		Muon_GLB_eta[i] = -9999;
 		Muon_GLB_phi[i] = -9999;
-
 		//tuneP MuonBestTrack
 		Muon_TuneP_pT[i] = -9999;
 		Muon_TuneP_pTError[i] = -9999;
@@ -615,7 +629,7 @@ void DYntupleMaker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSe
 		LHEParticle_E[i] = 0;
 		LHEParticle_ID[i] = 0;
 		LHEParticle_status[i] = 0;
-		
+
 		// GEN
 		GENLepton_phi[i] = GENLepton_eta[i] = GENLepton_pT[i] = GENLepton_mother[i] = GENLepton_mother_pT[i] = -100;
 		GENLepton_Px[i] = GENLepton_Py[i] = GENLepton_Pz[i] = GENLepton_E[i] = -100;
@@ -781,7 +795,12 @@ void DYntupleMaker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSe
 	}
 
 	// fills
-	if( theStoreHLTReportFlag ) hltReport(iEvent);
+	if( theStoreHLTReportFlag )
+	{
+		Fill_L1(iEvent, iSetup);
+		hltReport(iEvent);
+		test_HLTreport(iEvent, iSetup);
+	}
 	if( theStorePriVtxFlag ) fillPrimaryVertex(iEvent);
 	if( theStoreJetFlag ) fillJet(iEvent);
 	if( theStoreMETFlag ) fillMET(iEvent);
@@ -861,9 +880,19 @@ void DYntupleMaker::beginJob()
 		DYTree->Branch("HLT_trigFired", &_HLT_trigFired,"HLT_trigFired[HLT_ntrig]/I");
 		DYTree->Branch("HLT_trigName", &_HLT_trigName);
 		DYTree->Branch("HLT_trigPS", &_HLT_trigPS);
+		DYTree->Branch("HLT_trigPS_l1min", &_HLT_trigPS_l1min);
+		DYTree->Branch("HLT_trigPS_l1max", &_HLT_trigPS_l1max);
 		DYTree->Branch("HLT_trigPt", &_HLT_trigPt,"HLT_trigPt[HLT_ntrig]/D");
 		DYTree->Branch("HLT_trigEta", &_HLT_trigEta,"HLT_trigEta[HLT_ntrig]/D");
 		DYTree->Branch("HLT_trigPhi", &_HLT_trigPhi,"HLT_trigPhi[HLT_ntrig]/D");
+
+		DYTree->Branch("test_trigName", &test_trigName);
+		DYTree->Branch("test_trigFired", &test_trigFired);
+		DYTree->Branch("test_trigPrescale", &test_trigPrescale);
+		///////// L1 TEST
+		DYTree->Branch("L1_trigName", &vec_L1Seed_);
+		DYTree->Branch("L1_trigFired", &vec_L1Bit_);
+		DYTree->Branch("L1_trigPS", &vec_L1Prescale_);
 	}
 
 	if(theStoreJetFlag)
@@ -1605,6 +1634,24 @@ void DYntupleMaker::endJob()
 	std::cout <<"++++++++++++++++++++++++++++++++++++++" << std::endl;
 }
 
+///////////////////////////////
+// -- L1 INFORMATION TEST -- //
+///////////////////////////////
+void DYntupleMaker::Fill_L1(const edm::Event& iEvent, const edm::EventSetup& iSetup)
+{
+	L1GtUtils_->retrieveL1(iEvent, iSetup, t_globalAlgBlk_);
+	for(unsigned int i_seed=0; i_seed<vec_L1Seed_.size(); i_seed++)
+	{
+		bool isFired = false;
+		L1GtUtils_->getFinalDecisionByName(string(vec_L1Seed_[i_seed]), isFired);
+		vec_L1Bit_.push_back(isFired);
+
+		int L1Prescale = -999;
+		L1GtUtils_->getPrescaleByName(string(vec_L1Seed_[i_seed]), L1Prescale);
+		vec_L1Prescale_.push_back(L1Prescale);
+	}
+}
+
 ///////////////////////////////////////////////////////
 // -- makes hlt report and fills it to the ntuple -- //
 ///////////////////////////////////////////////////////
@@ -1617,8 +1664,18 @@ void DYntupleMaker::hltReport(const edm::Event &iEvent)
 	for( int i = 0; i < ntrigName; i++ ) 
 		trigFired[i] = false;
 
-	Handle<TriggerResults> trigResult;
+	edm::Handle<edm::TriggerResults> trigResult;
+	edm::Handle<pat::PackedTriggerPrescales> triggerPrescales;
+	edm::Handle<pat::PackedTriggerPrescales> triggerPrescales_l1min;
+	edm::Handle<pat::PackedTriggerPrescales> triggerPrescales_l1max;
 	iEvent.getByToken(TriggerToken, trigResult);
+	iEvent.getByToken(triggerPrescales_, triggerPrescales);
+	iEvent.getByToken(triggerPrescales_l1min_, triggerPrescales_l1min);
+	iEvent.getByToken(triggerPrescales_l1max_, triggerPrescales_l1max);
+	
+	std::vector<int> trigPS;
+	std::vector<int> trigPS_l1min;
+	std::vector<int> trigPS_l1max;
 
 	if( !trigResult.failedToGet() )
 	{
@@ -1639,6 +1696,9 @@ void DYntupleMaker::hltReport(const edm::Event &iEvent)
 					//cout << "trigger match = " << *match << endl;
 					if( trigName.triggerIndex(*match) >= (unsigned int)ntrigs ) continue;
 					if( trigResult->accept(trigName.triggerIndex(*match)) ) trigFired[itrigName] = true;
+					trigPS.push_back(triggerPrescales->getPrescaleForIndex(trigName.triggerIndex(*match)));
+					trigPS_l1min.push_back(triggerPrescales_l1min->getPrescaleForIndex(trigName.triggerIndex(*match)));
+					trigPS_l1max.push_back(triggerPrescales_l1max->getPrescaleForIndex(trigName.triggerIndex(*match)));
 					//cout << "trigger fire = " << trigFired[itrigName] << endl;
 				}
 
@@ -1651,7 +1711,7 @@ void DYntupleMaker::hltReport(const edm::Event &iEvent)
 	const bool isRD = iEvent.isRealData();
 	if( isRD )
 	{
-		Handle<TriggerResults> trigResultPAT;
+		edm::Handle<edm::TriggerResults> trigResultPAT;
 		iEvent.getByToken(TriggerTokenPAT, trigResultPAT);
 
 		if( !trigResultPAT.failedToGet() )
@@ -1800,7 +1860,10 @@ void DYntupleMaker::hltReport(const edm::Event &iEvent)
 					{
 						// cout << "\t\t\t[Matched]: filterName = " << filterName << ", Trigger Name = " << MuonHLT[itf] << endl;
 						name = MuonHLT[itf];
-						int _ps = MuonHLTPS[itf];
+						//int _ps = MuonHLTPS[itf];
+						int _ps = trigPS[itf];
+						int _ps_l1min = trigPS_l1min[itf];
+						int _ps_l1max = trigPS_l1max[itf];
 						_HLT_trigType[ntrigTot] = itf;
 						_HLT_trigFired[ntrigTot] = trigFired[itf];
 						_HLT_trigPt[ntrigTot] = obj.pt();
@@ -1808,6 +1871,8 @@ void DYntupleMaker::hltReport(const edm::Event &iEvent)
 						_HLT_trigPhi[ntrigTot] = obj.phi();
 						_HLT_trigName.push_back(name);
 						_HLT_trigPS.push_back(_ps);
+						_HLT_trigPS_l1min.push_back(_ps_l1min);
+						_HLT_trigPS_l1max.push_back(_ps_l1max);
 						ntrigTot++;
 					}
 
@@ -3280,6 +3345,71 @@ void DYntupleMaker::fillTT(const edm::Event &iEvent)
 	} // -- end of for(unsigned igsf = 0; igsf < gsfTracks->size(); igsf++ ): GSFTrack iteration -- //
 
 	NTT = _nTT;
+}
+
+void DYntupleMaker::test_HLTreport(const edm::Event &iEvent, const edm::EventSetup& iSetup) // DOES NOT WORK: L1 prescale always == 1
+{
+	edm::Handle <edm::TriggerResults> triggerBits;
+	edm::Handle <std::vector<pat::TriggerObjectStandAlone>> triggerObjects;
+	edm::Handle <pat::PackedTriggerPrescales> triggerPrescales;
+	edm::Handle <pat::PackedTriggerPrescales> triggerPrescales_l1min;
+	edm::Handle <pat::PackedTriggerPrescales> triggerPrescales_l1max;
+
+	iEvent.getByToken(triggerBits_, triggerBits);
+	iEvent.getByToken(triggerObjects_, triggerObjects);
+	iEvent.getByToken(triggerPrescales_, triggerPrescales);
+	iEvent.getByToken(triggerPrescales_l1min_, triggerPrescales_l1min);
+	iEvent.getByToken(triggerPrescales_l1max_, triggerPrescales_l1max);
+
+	const edm::TriggerNames &names = iEvent.triggerNames(*triggerBits);
+	std::cout << "\n == TRIGGER PATHS= " << std::endl;
+	for (unsigned int i = 0, n = triggerBits->size(); i < n; ++i)
+	{
+		if (/*((TString)(names.triggerName(i))).Contains("Photon") &&*/ triggerPrescales_l1max->getPrescaleForIndex(i) > 1)
+		{
+			std::cout << "Trigger " << names.triggerName(i) <<
+				", prescale " << triggerPrescales->getPrescaleForIndex(i) <<
+				": " << (triggerBits->accept(i) ? "PASS" : "fail (or not run)") <<
+				",   l1min prescale " << triggerPrescales_l1min->getPrescaleForIndex(i) <<
+				",   l1max prescale " << triggerPrescales_l1max->getPrescaleForIndex(i) << std::endl;
+		}
+	}
+	/*
+	std::cout << "\n TRIGGER OBJECTS " << std::endl;
+	for (pat::TriggerObjectStandAlone obj : *triggerObjects)
+	{ // note: not "const &" since we want to call unpackPathNames
+		obj.unpackPathNames(names);
+		std::cout << "\tTrigger object:  pt " << obj.pt() << ", eta " << obj.eta() << ", phi " << obj.phi() << std::endl;
+		// Print trigger object collection and type
+		std::cout << "\t   Collection: " << obj.collection() << std::endl;
+		std::cout << "\t   Type IDs:   ";
+		for (unsigned h = 0; h < obj.filterIds().size(); ++h) std::cout << " " << obj.filterIds()[h] ;
+		std::cout << std::endl;
+		// Print associated trigger filters
+		std::cout << "\t   Filters:    ";
+		for (unsigned h = 0; h < obj.filterLabels().size(); ++h) std::cout << " " << obj.filterLabels()[h];
+		std::cout << std::endl;
+		std::vector<std::string> pathNamesAll = obj.pathNames(false);
+		std::vector<std::string> pathNamesLast = obj.pathNames(true);
+		// Print all trigger paths, for each one record also if the object is associated to a 'l3' filter (always true for the
+		// definition used in the PAT trigger producer) and if it's associated to the last filter of a successfull path (which
+		// means that this object did cause this trigger to succeed; however, it doesn't work on some multi-object triggers)
+		std::cout << "\t   Paths (" << pathNamesAll.size()<<"/"<<pathNamesLast.size()<<"):    ";
+		for (unsigned h = 0, n = pathNamesAll.size(); h < n; ++h)
+		{
+			bool isBoth = obj.hasPathName( pathNamesAll[h], true, true );
+			bool isL3   = obj.hasPathName( pathNamesAll[h], false, true );
+			bool isLF   = obj.hasPathName( pathNamesAll[h], true, false );
+			bool isNone = obj.hasPathName( pathNamesAll[h], false, false );
+			std::cout << "   " << pathNamesAll[h];
+			if (isBoth) std::cout << "(L,3)";
+			if (isL3 && !isBoth) std::cout << "(*,3)";
+			if (isLF && !isBoth) std::cout << "(L,*)";
+			if (isNone && !isBoth && !isL3 && !isLF) std::cout << "(*,*)";
+		}
+		std::cout << std::endl;
+	}
+	std::cout << std::endl;*/
 }
 
 void DYntupleMaker::endRun(const Run & iRun, const EventSetup & iSetup)

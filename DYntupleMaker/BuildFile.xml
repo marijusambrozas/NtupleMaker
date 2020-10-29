@@ -22,6 +22,8 @@
 <use name="RecoVertex/GaussianSumVertexFit"/>
 <use name="DataFormats/L1GlobalMuonTrigger"/>
 <use name="DataFormats/L1Trigger"/>
+<use name="DataFormats/L1TGlobal"/>
+<use name="L1Trigger/L1TGlobal"/>
 <use name="HLTrigger/HLTcore"/>
 <use name="CommonTools/CandUtils"/>
 <!-- <use name="SHarper/HEEPAnalyzer"/> -->

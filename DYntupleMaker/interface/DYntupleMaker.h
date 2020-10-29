@@ -5,6 +5,7 @@
 // -- system include files -- //
 ////////////////////////////////
 #include <memory>
+#include <cmath>
 #include <iostream>
 
 //////////////////////
@@ -69,6 +70,13 @@
 // -- Triggers -- //
 ////////////////////
 #include "HLTrigger/HLTcore/interface/HLTConfigProvider.h"
+#include "FWCore/Common/interface/TriggerNames.h"
+#include "DataFormats/Common/interface/TriggerResults.h"
+#include "DataFormats/PatCandidates/interface/TriggerObjectStandAlone.h"
+#include "DataFormats/PatCandidates/interface/PackedTriggerPrescales.h"
+////////// L1 TEST
+#include "L1Trigger/L1TGlobal/interface/L1TGlobalUtil.h"
+#include "DataFormats/L1TGlobal/interface/GlobalAlgBlk.h"
 
 ////////////////
 // -- Else -- //
@@ -85,6 +93,8 @@
 #include "MagneticField/Records/interface/IdealMagneticFieldRecord.h"
 #include "PhysicsTools/Utilities/interface/LumiReWeighting.h"
 #include "SimDataFormats/PileupSummaryInfo/interface/PileupSummaryInfo.h"
+#include "DataFormats/Math/interface/deltaR.h"
+
 
 #include <TFile.h>
 #include <TTree.h>
@@ -121,6 +131,8 @@ private:
 	virtual void fillGENInfo(const edm::Event &iEvent);            // fill MET information
 	virtual void fillGenOthersInfo(const edm::Event &iEvent);
 	virtual void fillTT(const edm::Event&);
+	virtual void test_HLTreport(const edm::Event &iEvent, const edm::EventSetup& iSetup);
+	virtual void Fill_L1(const edm::Event &iEvent, const edm::EventSetup &iSetup);
 
 	bool reorder(double &a, double &b)
 	{
@@ -165,6 +177,8 @@ private:
 	edm::EDGetTokenT< edm::TriggerResults > 						TriggerTokenPAT;
 	edm::EDGetTokenT< std::vector<pat::TriggerObjectStandAlone> > 				TriggerObjectToken;
 	//edm::EDGetTokenT< trigger::TriggerEvent > 						TriggerSummaryToken;
+	////////////// L1 TEST
+	edm::EDGetTokenT< BXVector<GlobalAlgBlk> >         					t_globalAlgBlk_;
 
 	edm::EDGetTokenT< GenEventInfoProduct > 						GenEventInfoToken;
 	edm::EDGetTokenT< reco::BeamSpot > 							BeamSpotToken;
@@ -177,7 +191,12 @@ private:
 	edm::EDGetTokenT< double > 								prefweightup_token;
 	edm::EDGetTokenT< double > 								prefweightdown_token;
 
-
+	// Trigger info from example: https://twiki.cern.ch/twiki/bin/view/CMSPublic/WorkBookMiniAOD2016#Trigger
+	edm::EDGetTokenT<edm::TriggerResults> triggerBits_;
+	edm::EDGetTokenT<pat::PackedTriggerPrescales> triggerPrescales_;
+	edm::EDGetTokenT<pat::PackedTriggerPrescales> triggerPrescales_l1min_;
+	edm::EDGetTokenT<pat::PackedTriggerPrescales> triggerPrescales_l1max_;
+	edm::EDGetTokenT<std::vector<pat::TriggerObjectStandAlone>> triggerObjects_;
 
 	// // -- For Electrons -- //
 	// edm::InputTag theElectronLabel;
@@ -244,6 +263,10 @@ private:
 	std::vector<int > MuonHLTPS;
 	std::vector<std::string > trigModuleNames;
 	std::vector<std::string > trigModuleNames_preFil;
+
+	///////// L1 TEST
+	vector< std::string> vec_L1Seed_;
+	l1t::L1TGlobalUtil   *L1GtUtils_;
 
 	// Pile-up Reweight
 	// edm::LumiReWeighting LumiWeights_;
@@ -333,9 +356,18 @@ private:
 	int _HLT_trigFired[MPSIZE];
 	std::vector<std::string> _HLT_trigName;
 	std::vector<int> _HLT_trigPS;
+	std::vector<int> _HLT_trigPS_l1min;
+	std::vector<int> _HLT_trigPS_l1max;
 	double _HLT_trigPt[MPSIZE];
 	double _HLT_trigEta[MPSIZE];
 	double _HLT_trigPhi[MPSIZE];
+	//////////// L1 TEST
+	std::vector< bool > vec_L1Bit_;
+	std::vector< int >  vec_L1Prescale_;
+
+	std::vector<std::string> test_trigName;
+	std::vector<int> test_trigFired;
+	std::vector<int> test_trigPrescale;
 
 	// Jet
 	double JETbDiscriminant[MPSIZE];
