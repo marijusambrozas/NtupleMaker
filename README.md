@@ -3,7 +3,7 @@ Ntuple maker for differental DY cross section measurements with full Run-2 data
 
 **Simplified version that demonstrates only L1 and HLT information writing into ntuples**
 
-Twiki: https://twiki.cern.ch/twiki/bin/view/CMS/SNUCMSYooDYntuple
+* Problem: all L1 prescales obtained are == 1
 
 ### How to get started:
 	export SCRAM_ARCH=slc6_amd64_gcc530
