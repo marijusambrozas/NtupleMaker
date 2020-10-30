@@ -1,11 +1,11 @@
 # NtupleMaker
 Ntuple maker for differental DY cross section measurements with full Run-2 data
-*Simplified version that demonstrates only L1 and HLT information writing into ntuples*
+
+**Simplified version that demonstrates only L1 and HLT information writing into ntuples**
 
 Twiki: https://twiki.cern.ch/twiki/bin/view/CMS/SNUCMSYooDYntuple
 
 ### How to get started:
-	```
 	export SCRAM_ARCH=slc6_amd64_gcc530
 	export VO_CMS_SW_DIR=/cvmfs/cms.cern.ch
 	source $VO_CMS_SW_DIR/cmsset_default.sh
@@ -20,7 +20,6 @@ Twiki: https://twiki.cern.ch/twiki/bin/view/CMS/SNUCMSYooDYntuple
 	cd Phys/DYntupleMaker/test
 	cmsRun ntupler_arg.py
 	# by default it will run on one of SinglePhoton MINIAOD data files from Run2016B (03Feb2017_ver2-v2)
-	```
 
 To run `ntupler_arg.py` with more specific settings, several different arguments can be provided:
   * ```globalTag```: global tag to use
